@@ -1,15 +1,20 @@
 {
   "name": "linkvault",
-  "version": "1.0.50",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
-  },
-  "dependencies": {
-    "elysia": "latest"
-  },
+  "type": "module",
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "concurrently": "^9.2.1"
   },
-  "module": "src/index.js"
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "bun --cwd backend dev",
+    "dev:frontend": "bun --cwd frontend dev",
+    "dev": "concurrently \"bun run dev:backend\" \"bun run dev:frontend\""
+  }
 }
