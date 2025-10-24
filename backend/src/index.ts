@@ -1,7 +1,12 @@
-import { Elysia } from "elysia";
+import { Elysia } from 'elysia';
+import { db } from './db';
+import { redisClient } from './redis'; // Importe o cliente
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
+const app = new Elysia()
+  .decorate('db', db)
+  .decorate('redis', redisClient)
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+  .get('/', () => 'Hello from Link-Vault Backend!')
+  .listen(3000);
+
+console.log(`Backend rodando em http://localhost:3000`);

@@ -1,0 +1,6 @@
+services:
+  redis:
+    image: "redis:latest" # Use the lightweight alpine version
+    container_name: my-redis
+    ports:
+      - "6379:6379" # Map host port 6379 to container port 6379
