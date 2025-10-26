@@ -1,0 +1,143 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Registro" showNav={false}>
+    <div class="min-h-screen flex items-center justify-center p-8">
+        <div
+            class="bg-[#1a1a1a] border-2 border-[#333] rounded-2xl p-10 w-full max-w-md"
+        >
+            <h1 class="text-4xl font-bold text-center mb-2">🔗 LinkVault</h1>
+            <h2 class="text-xl text-gray-400 text-center mb-8 font-medium">
+                Criar Conta
+            </h2>
+
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label
+                        for="username"
+                        class="block text-gray-400 text-sm font-medium mb-2"
+                    >
+                        Usuário
+                    </label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        required
+                        class="w-full px-4 py-3 bg-black border-2 border-[#333] rounded-xl text-white focus:border-white focus:outline-none transition-colors"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        for="email"
+                        class="block text-gray-400 text-sm font-medium mb-2"
+                    >
+                        E-mail
+                    </label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        class="w-full px-4 py-3 bg-black border-2 border-[#333] rounded-xl text-white focus:border-white focus:outline-none transition-colors"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        for="password"
+                        class="block text-gray-400 text-sm font-medium mb-2"
+                    >
+                        Senha
+                    </label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        class="w-full px-4 py-3 bg-black border-2 border-[#333] rounded-xl text-white focus:border-white focus:outline-none transition-colors"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-85 hover:-translate-y-0.5 transition-all mt-2"
+                >
+                    Registrar
+                </button>
+
+                <div
+                    id="error-message"
+                    class="text-red-500 text-sm text-center hidden"
+                >
+                </div>
+                <div
+                    id="success-message"
+                    class="text-green-500 text-sm text-center hidden"
+                >
+                </div>
+            </form>
+
+            <p class="text-center mt-6 text-gray-400">
+                Já tem uma conta? <a
+                    href="/login"
+                    class="text-white underline font-semibold hover:opacity-80"
+                    >Faça login</a
+                >
+            </p>
+        </div>
+    </div>
+</Layout>
+
+<script>
+    const form = document.getElementById("register-form") as HTMLFormElement;
+    const errorDiv = document.getElementById("error-message") as HTMLDivElement;
+    const successDiv = document.getElementById(
+        "success-message",
+    ) as HTMLDivElement;
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorDiv.classList.add("hidden");
+        successDiv.classList.add("hidden");
+
+        const formData = new FormData(form);
+        const username = formData.get("username") as string;
+        const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
+
+        try {
+            const response = await fetch(
+                "http://localhost:3000/auth/register",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ username, email, password }),
+                },
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Erro ao registrar");
+            }
+
+            // Sucesso - mostra mensagem e redireciona
+            successDiv.textContent =
+                "Conta criada com sucesso! Redirecionando...";
+            successDiv.classList.remove("hidden");
+
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1500);
+        } catch (error) {
+            errorDiv.textContent =
+                error instanceof Error ? error.message : "Erro ao registrar";
+            errorDiv.classList.remove("hidden");
+        }
+    });
+</script>

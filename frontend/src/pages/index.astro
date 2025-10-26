@@ -1,11 +1,28 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Bem-vindo" showNav={false}>
+	<div
+		class="min-h-screen flex flex-col items-center justify-center text-center p-8"
+	>
+		<h1 class="text-6xl md:text-7xl font-bold mb-4">🔗 LinkVault</h1>
+		<p class="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl">
+			Organize e gerencie seus links favoritos
+		</p>
+		<div class="flex gap-4">
+			<a
+				href="/login"
+				class="bg-white text-black px-8 py-4 rounded-xl font-semibold hover:opacity-85 hover:-translate-y-0.5 transition-all text-lg"
+			>
+				Entrar
+			</a>
+			<a
+				href="/register"
+				class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-black transition-all text-lg"
+			>
+				Criar Conta
+			</a>
+		</div>
+	</div>
 </Layout>

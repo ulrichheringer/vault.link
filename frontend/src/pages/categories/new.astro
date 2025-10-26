@@ -1,0 +1,213 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Nova Categoria">
+    <div class="max-w-4xl mx-auto p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Nova Categoria</h1>
+            <a
+                href="/dashboard"
+                class="bg-[#1a1a1a] border-2 border-[#333] px-6 py-2 rounded-xl hover:border-white transition-colors font-medium"
+            >
+                ← Voltar
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <form
+                id="category-form"
+                class="bg-[#1a1a1a] border-2 border-[#333] rounded-2xl p-8"
+            >
+                <div class="mb-6">
+                    <label
+                        for="name"
+                        class="block text-gray-400 text-sm font-medium mb-2"
+                    >
+                        Nome da Categoria
+                    </label>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        required
+                        placeholder="Ex: Trabalho, Estudos, etc."
+                        class="w-full px-4 py-3 bg-black border-2 border-[#333] rounded-xl text-white focus:border-white focus:outline-none transition-colors"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-85 hover:-translate-y-0.5 transition-all"
+                >
+                    Criar Categoria
+                </button>
+
+                <div
+                    id="error-message"
+                    class="text-red-500 text-sm text-center mt-4 hidden"
+                >
+                </div>
+                <div
+                    id="success-message"
+                    class="text-green-500 text-sm text-center mt-4 hidden"
+                >
+                </div>
+            </form>
+
+            <div class="bg-[#1a1a1a] border-2 border-[#333] rounded-2xl p-8">
+                <h2 class="text-2xl font-bold mb-6">Minhas Categorias</h2>
+                <div id="categories-list" class="space-y-3">
+                    <p class="text-gray-400 text-center">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</Layout>
+
+<script>
+    import { getToken, logout } from "../../lib/auth";
+
+    const token = getToken();
+    if (!token) {
+        window.location.href = "/login";
+    }
+
+    const form = document.getElementById("category-form") as HTMLFormElement;
+    const errorDiv = document.getElementById("error-message") as HTMLDivElement;
+    const successDiv = document.getElementById(
+        "success-message",
+    ) as HTMLDivElement;
+
+    interface Category {
+        id: number;
+        name: string;
+        userId: number;
+    }
+
+    async function loadCategories() {
+        const container = document.getElementById("categories-list");
+        if (!container) return;
+
+        try {
+            const response = await fetch("http://localhost:3000/categories", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.status === 401) {
+                logout();
+                return;
+            }
+
+            const categories: Category[] = await response.json();
+
+            if (categories.length === 0) {
+                container.innerHTML =
+                    '<p class="text-gray-400 text-center">Nenhuma categoria criada ainda.</p>';
+                return;
+            }
+
+            container.innerHTML = categories
+                .map(
+                    (cat) => `
+				<div class="flex justify-between items-center bg-black border-2 border-[#333] rounded-xl p-4 hover:border-white transition-colors">
+					<span class="font-medium">${cat.name}</span>
+					<button class="btn-delete-small bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors" data-id="${cat.id}">Deletar</button>
+				</div>
+			`,
+                )
+                .join("");
+
+            // Event listeners para deletar
+            document.querySelectorAll(".btn-delete-small").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const id = (e.target as HTMLElement).dataset.id;
+                    if (
+                        confirm(
+                            "Tem certeza? Os links desta categoria não serão deletados, mas perderão a categoria.",
+                        )
+                    ) {
+                        await deleteCategory(Number(id));
+                    }
+                });
+            });
+        } catch (error) {
+            console.error("Erro ao carregar categorias:", error);
+            container!.innerHTML =
+                '<p class="text-red-500 text-center">Erro ao carregar categorias.</p>';
+        }
+    }
+
+    async function deleteCategory(id: number) {
+        try {
+            const response = await fetch(
+                `http://localhost:3000/categories/${id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            if (response.ok) {
+                await loadCategories();
+            } else {
+                const data = await response.json();
+                alert(data.error || "Erro ao deletar categoria");
+            }
+        } catch (error) {
+            console.error("Erro ao deletar categoria:", error);
+            alert("Erro ao deletar categoria");
+        }
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorDiv.classList.add("hidden");
+        successDiv.classList.add("hidden");
+
+        const formData = new FormData(form);
+        const name = formData.get("name") as string;
+
+        try {
+            const response = await fetch("http://localhost:3000/categories", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ name }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Erro ao criar categoria");
+            }
+
+            successDiv.textContent = "Categoria criada com sucesso!";
+            successDiv.classList.remove("hidden");
+            form.reset();
+
+            // Recarrega a lista de categorias
+            await loadCategories();
+
+            // Esconde a mensagem de sucesso após 3 segundos
+            setTimeout(() => {
+                successDiv.classList.add("hidden");
+            }, 3000);
+        } catch (error) {
+            errorDiv.textContent =
+                error instanceof Error
+                    ? error.message
+                    : "Erro ao criar categoria";
+            errorDiv.classList.remove("hidden");
+        }
+    });
+
+    // Carrega categorias ao iniciar
+    loadCategories();
+</script>

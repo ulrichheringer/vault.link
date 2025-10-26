@@ -1,0 +1,308 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Dashboard">
+    <div class="flex flex-wrap justify-between items-center gap-4 mb-8">
+        <div>
+            <h1 class="text-4xl font-bold mb-2">Meus Links</h1>
+            <p id="user-info" class="text-gray-400"></p>
+        </div>
+        <a
+            href="/links/new"
+            class="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-85 hover:-translate-y-0.5 transition-all"
+        >
+            + Adicionar Link
+        </a>
+    </div>
+
+    <div class="flex flex-wrap gap-4 mb-8">
+        <div class="flex-1 min-w-[250px]">
+            <input
+                type="text"
+                id="search"
+                placeholder="Buscar links..."
+                class="w-full px-4 py-3 bg-black border-2 border-[#333] rounded-xl text-white focus:border-white focus:outline-none transition-colors"
+            />
+        </div>
+        <div class="flex-1 min-w-[250px]">
+            <select
+                id="category-filter"
+                class="w-full px-4 py-3 bg-black border-2 border-[#333] rounded-xl text-white focus:border-white focus:outline-none transition-colors"
+            >
+                <option value="">Todas as categorias</option>
+            </select>
+        </div>
+    </div>
+
+    <div
+        id="links-container"
+        class="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4 mb-8"
+    >
+        <p class="col-span-full text-center text-gray-400 py-16 text-lg">
+            Carregando...
+        </p>
+    </div>
+
+    <div
+        id="pagination"
+        class="hidden flex-wrap justify-between items-center gap-4"
+    >
+        <button
+            id="prev-btn"
+            class="px-5 py-3 bg-[#1a1a1a] border-2 border-[#333] rounded-xl font-semibold hover:border-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+            ← Anterior
+        </button>
+        <span id="page-info" class="text-gray-400 font-medium"></span>
+        <button
+            id="next-btn"
+            class="px-5 py-3 bg-[#1a1a1a] border-2 border-[#333] rounded-xl font-semibold hover:border-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+            Próxima →
+        </button>
+    </div>
+</Layout>
+
+<script>
+    import { getToken, getUser, logout } from "../lib/auth";
+
+    interface Link {
+        id: number;
+        title: string;
+        url: string;
+        description: string | null;
+        categoryId: number | null;
+        categoria: string | null;
+    }
+
+    interface Category {
+        id: number;
+        name: string;
+    }
+
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentSearch = "";
+    let currentCategoryId: number | null = null;
+
+    const token = getToken();
+    const user = getUser();
+
+    if (!token) {
+        window.location.href = "/login";
+    }
+
+    if (user) {
+        const userInfo = document.getElementById("user-info");
+        if (userInfo) {
+            userInfo.textContent = `Olá, ${user.username}!`;
+        }
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetch("http://localhost:3000/categories", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.status === 401) {
+                logout();
+                return;
+            }
+
+            const categories: Category[] = await response.json();
+            const select = document.getElementById(
+                "category-filter",
+            ) as HTMLSelectElement;
+
+            categories.forEach((cat) => {
+                const option = document.createElement("option");
+                option.value = cat.id.toString();
+                option.textContent = cat.name;
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Erro ao carregar categorias:", error);
+        }
+    }
+
+    async function loadLinks() {
+        const container = document.getElementById("links-container");
+        if (!container) return;
+
+        container.innerHTML = '<p class="loading">Carregando...</p>';
+
+        try {
+            const params = new URLSearchParams({
+                page: currentPage.toString(),
+                limit: "10",
+            });
+
+            if (currentSearch) {
+                params.append("search", currentSearch);
+            }
+
+            if (currentCategoryId) {
+                params.append("categoryId", currentCategoryId.toString());
+            }
+
+            const response = await fetch(
+                `http://localhost:3000/links?${params}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            if (response.status === 401) {
+                logout();
+                return;
+            }
+
+            const result = await response.json();
+            const links: Link[] = result.data;
+            const pagination = result.pagination;
+
+            totalPages = pagination.totalPages;
+
+            if (links.length === 0) {
+                container.innerHTML =
+                    '<p class="col-span-full text-center text-gray-400 py-16">Nenhum link encontrado.</p>';
+                document.getElementById("pagination")!.style.display = "none";
+                return;
+            }
+
+            container.innerHTML = links
+                .map(
+                    (link) => `
+				<div class="group relative bg-[#1a1a1a] border border-white rounded-xl p-5 cursor-pointer transition-all hover:border-2 hover:-translate-y-1 hover:shadow-2xl min-h-[140px] flex flex-col justify-center items-center text-center" data-url="${link.url}" data-id="${link.id}">
+					<button class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded" data-id="${link.id}" title="Deletar">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+						</svg>
+					</button>
+					<div class="w-full">
+						<h3 class="text-lg font-semibold underline mb-2 leading-snug">${link.title}</h3>
+						${link.categoria ? `<span class="inline-block bg-white text-black px-3 py-1 rounded-lg text-xs font-semibold mb-2">${link.categoria}</span>` : ""}
+						${link.description ? `<p class="text-gray-400 text-sm leading-relaxed mt-2">${link.description}</p>` : ""}
+					</div>
+				</div>
+			`,
+                )
+                .join("");
+
+            // Adiciona event listeners para abrir link
+            document.querySelectorAll("[data-url]").forEach((card) => {
+                const cardElement = card as HTMLElement;
+                const url = cardElement.dataset.url;
+
+                card.addEventListener("click", (e) => {
+                    // Não abre se clicou no botão de deletar
+                    if (
+                        (e.target as HTMLElement).closest("[title='Deletar']")
+                    ) {
+                        return;
+                    }
+                    if (url) {
+                        window.open(url, "_blank");
+                    }
+                });
+            });
+
+            // Adiciona event listeners para deletar
+            document.querySelectorAll("[title='Deletar']").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    const id = (e.currentTarget as HTMLElement).dataset.id;
+                    if (confirm("Tem certeza que deseja deletar este link?")) {
+                        await deleteLink(Number(id));
+                    }
+                });
+            });
+
+            // Atualiza paginação
+            updatePagination(pagination);
+        } catch (error) {
+            console.error("Erro ao carregar links:", error);
+            container.innerHTML =
+                '<p class="error">Erro ao carregar links.</p>';
+        }
+    }
+
+    async function deleteLink(id: number) {
+        try {
+            const response = await fetch(`http://localhost:3000/links/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (response.ok) {
+                await loadLinks();
+            } else {
+                alert("Erro ao deletar link");
+            }
+        } catch (error) {
+            console.error("Erro ao deletar link:", error);
+            alert("Erro ao deletar link");
+        }
+    }
+
+    function updatePagination(pagination: any) {
+        const paginationDiv = document.getElementById("pagination");
+        const pageInfo = document.getElementById("page-info");
+        const prevBtn = document.getElementById(
+            "prev-btn",
+        ) as HTMLButtonElement;
+        const nextBtn = document.getElementById(
+            "next-btn",
+        ) as HTMLButtonElement;
+
+        if (!paginationDiv || !pageInfo || !prevBtn || !nextBtn) return;
+
+        paginationDiv.style.display = "flex";
+        pageInfo.textContent = `Página ${pagination.page} de ${pagination.totalPages} (${pagination.total} links)`;
+
+        prevBtn.disabled = pagination.page === 1;
+        nextBtn.disabled = pagination.page === pagination.totalPages;
+    }
+
+    // Event listeners
+    document.getElementById("search")?.addEventListener("input", (e) => {
+        currentSearch = (e.target as HTMLInputElement).value;
+        currentPage = 1;
+        loadLinks();
+    });
+
+    document
+        .getElementById("category-filter")
+        ?.addEventListener("change", (e) => {
+            const value = (e.target as HTMLSelectElement).value;
+            currentCategoryId = value ? Number(value) : null;
+            currentPage = 1;
+            loadLinks();
+        });
+
+    document.getElementById("prev-btn")?.addEventListener("click", () => {
+        if (currentPage > 1) {
+            currentPage--;
+            loadLinks();
+        }
+    });
+
+    document.getElementById("next-btn")?.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadLinks();
+        }
+    });
+
+    // Carrega dados iniciais
+    loadCategories();
+    loadLinks();
+</script>

@@ -1,22 +1,88 @@
+---
+import "../styles/global.css";
+
+interface Props {
+	title: string;
+	showNav?: boolean;
+}
+
+const { title, showNav = true } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 	<head>
 		<meta charset="UTF-8" />
+		<meta name="description" content="LinkVault - Gerencie seus links" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>{title} - LinkVault</title>
 	</head>
-	<body>
-		<slot />
+	<body class="bg-black text-white min-h-screen">
+		{
+			showNav && (
+				<nav class="bg-[#1a1a1a] border-b-2 border-[#333] sticky top-0 z-50 py-4">
+					<div class="max-w-7xl mx-auto px-8 flex justify-between items-center">
+						<a
+							href="/dashboard"
+							class="text-2xl font-bold hover:opacity-80 transition-opacity"
+						>
+							🔗 LinkVault
+						</a>
+						<div class="flex gap-6 items-center">
+							<a
+								href="/dashboard"
+								class={`font-medium transition-colors ${currentPath === "/dashboard" ? "text-white" : "text-gray-400 hover:text-white"}`}
+							>
+								Dashboard
+							</a>
+							<a
+								href="/categories/new"
+								class={`font-medium transition-colors ${currentPath === "/categories/new" ? "text-white" : "text-gray-400 hover:text-white"}`}
+							>
+								Nova Categoria
+							</a>
+							<a
+								href="/links/new"
+								class={`font-medium transition-colors ${currentPath === "/links/new" ? "text-white" : "text-gray-400 hover:text-white"}`}
+							>
+								Novo Link
+							</a>
+							<button
+								id="logout-btn"
+								class="border-2 border-white px-4 py-2 rounded-lg font-semibold hover:bg-white hover:text-black transition-all"
+							>
+								Sair
+							</button>
+						</div>
+					</div>
+				</nav>
+			)
+		}
+		<main class="max-w-7xl mx-auto p-8">
+			<slot />
+		</main>
+
+		<script>
+			import { logout, isAuthenticated } from "../lib/auth";
+
+			// Proteger rotas autenticadas
+			const publicRoutes = ["/login", "/register", "/"];
+			const currentPath = window.location.pathname;
+
+			if (!publicRoutes.includes(currentPath) && !isAuthenticated()) {
+				window.location.href = "/login";
+			}
+
+			// Logout button
+			const logoutBtn = document.getElementById("logout-btn");
+			if (logoutBtn) {
+				logoutBtn.addEventListener("click", () => {
+					logout();
+				});
+			}
+		</script>
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
