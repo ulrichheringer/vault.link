@@ -16,5 +16,9 @@
     "dev:backend": "bun --cwd backend dev",
     "dev:frontend": "bun --cwd frontend dev",
     "dev": "concurrently \"bun run dev:backend\" \"bun run dev:frontend\""
+  },
+  "dependencies": {
+    "@elysiajs/cookie": "^0.8.0",
+    "@elysiajs/jwt": "^1.4.0"
   }
 }
