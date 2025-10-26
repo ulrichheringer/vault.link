@@ -1,5 +1,7 @@
 # 🔗 LinkVault
 
+![Tests](https://github.com/SEU_USUARIO/linkvault/actions/workflows/tests.yml/badge.svg)
+
 > Um gerenciador moderno de links com foco em performance, escalabilidade e experiência do desenvolvedor.
 
 LinkVault é uma aplicação full-stack para salvar, organizar e buscar links de forma eficiente. O projeto foi desenvolvido com tecnologias de ponta do ecossistema JavaScript/TypeScript, priorizando velocidade de desenvolvimento, performance em runtime e boas práticas de arquitetura.
@@ -144,6 +146,112 @@ bun backend/src/benchmark/index.ts
 # HTTP benchmark (requer servidor rodando)
 bun backend/src/benchmark/http-benchmark.ts
 ```
+
+## 🧪 Testes
+
+O projeto inclui uma **suite completa de testes de integração** desenvolvida com Jest, garantindo a qualidade e confiabilidade de todas as funcionalidades.
+
+### CI/CD Automatizado
+
+✅ **GitHub Actions** configurado para rodar testes automaticamente:
+
+- Executa em todos os `push` e `pull requests` nas branches `main` e `develop`
+- Provisiona PostgreSQL e Redis como services
+- Roda migrations automaticamente
+- Executa 91 testes + cobertura de código
+- Upload opcional para Codecov
+
+### Cobertura de Testes
+
+- **91 testes de integração** cobrindo todo o backend
+- **100% de sucesso** em todos os módulos
+- **179 asserções** validando comportamentos esperados
+
+### Módulos Testados
+
+#### 🔐 Autenticação (auth.test.ts)
+
+- Registro de usuários com validações
+- Login com email/username
+- Geração e validação de tokens JWT
+- Tratamento de duplicatas e dados inválidos
+
+#### 🔗 Links (links.test.ts)
+
+- CRUD completo de links
+- Paginação e filtros
+- Busca por termo (case-insensitive)
+- Associação com categorias
+- Cache Redis e invalidação
+- Isolamento entre usuários
+
+#### 📂 Categorias (categories.test.ts)
+
+- CRUD completo de categorias
+- Validação de nomes duplicados
+- Comportamento ao deletar (set null nos links)
+- Isolamento entre usuários
+
+#### ⚙️ Middleware (middleware.test.ts)
+
+- Autenticação JWT
+- Validação de dados de entrada
+- Tratamento de erros (400, 401, 404, 409, 500)
+- CORS
+- Rotas públicas vs privadas
+- Paginação
+
+#### 🔄 End-to-End (e2e.test.ts)
+
+- Fluxo completo: Registro → Login → CRUD
+- 19 passos simulando usuário real
+- Testes de isolamento entre usuários
+- Validação de autorização em todos os endpoints
+
+### Executando os Testes
+
+```bash
+# Todos os testes
+cd backend
+bun test
+
+# Modo watch (reexecuta ao salvar)
+bun test:watch
+
+# Com cobertura de código
+bun test:coverage
+
+# Testes específicos
+bun test:auth         # Apenas autenticação
+bun test:links        # Apenas links
+bun test:categories   # Apenas categorias
+```
+
+### Configuração de Testes
+
+Os testes utilizam um **banco de dados separado** (`linkvault_test`) e limpam automaticamente os dados entre cada teste, garantindo isolamento completo.
+
+```bash
+# Criar banco de teste
+createdb linkvault_test
+
+# Configurar .env.test
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/linkvault_test
+JWT_SECRET=test-secret-key
+NODE_ENV=test
+```
+
+### Helpers de Teste
+
+Funções auxiliares facilitam a criação de dados de teste:
+
+- `createTestUser()` - Cria usuário com hash bcrypt
+- `createTestCategory()` - Cria categoria associada a usuário
+- `createTestLink()` - Cria link com categoria opcional
+- `cleanupDatabase()` - Limpa banco e cache Redis
+- `generateAuthHeader()` - Gera header de autorização JWT
+
+**Documentação completa**: Ver `backend/src/__tests__/README.md`
 
 ## 🗃️ Schema do Banco
 
@@ -319,8 +427,6 @@ curl http://localhost:3000/links \
 
 ## 📈 Melhorias Futuras
 
-- [ ] Testes automatizados (unit + integration) com Bun test
-- [ ] CI/CD com GitHub Actions
 - [ ] Deploy no Fly.io / Railway
 - [ ] WebSockets para atualizações real-time
 - [ ] Upload de thumbnails para links

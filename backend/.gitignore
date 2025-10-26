@@ -1,0 +1,10 @@
+# Ignorar cobertura de testes
+coverage/
+*.lcov
+
+# Ignorar resultados de testes
+test-results/
+junit.xml
+
+# Ignorar cache do Jest
+.jest-cache/
