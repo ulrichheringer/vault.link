@@ -1,7 +1,5 @@
 # 🔗 LinkVault
 
-![Tests](https://github.com/SEU_USUARIO/linkvault/actions/workflows/tests.yml/badge.svg)
-
 > Um gerenciador moderno de links com foco em performance, escalabilidade e experiência do desenvolvedor.
 
 LinkVault é uma aplicação full-stack para salvar, organizar e buscar links de forma eficiente. O projeto foi desenvolvido com tecnologias de ponta do ecossistema JavaScript/TypeScript, priorizando velocidade de desenvolvimento, performance em runtime e boas práticas de arquitetura.
