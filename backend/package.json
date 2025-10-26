@@ -2,7 +2,13 @@
   "name": "linkvault",
   "version": "1.0.50",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose",
+    "test:auth": "jest auth.test.ts",
+    "test:links": "jest links.test.ts",
+    "test:categories": "jest categories.test.ts",
     "dev": "bun run --watch src/index.ts",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate:pg",
@@ -19,10 +25,14 @@
   },
   "devDependencies": {
     "@astrojs/tailwind": "^6.0.2",
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
     "@types/pg": "^8.15.5",
     "bun-types": "latest",
     "drizzle-kit": "0.31.5",
-    "tailwindcss": "^4.1.16"
+    "jest": "^30.2.0",
+    "tailwindcss": "^4.1.16",
+    "ts-jest": "^29.4.5"
   },
   "module": "src/index.js"
 }

@@ -7,7 +7,8 @@ export const CreateUserSchema = t.Object({
 });
 
 export const LoginUserSchema = t.Object({
-    email: t.String({ format: 'email' }),
+    email: t.Optional(t.String()),
+    username: t.Optional(t.String()),
     password: t.String(),
 });
 

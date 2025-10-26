@@ -126,5 +126,8 @@ logger.info('SERVER', 'Servidor iniciado com sucesso', {
   env: process.env.NODE_ENV || 'development'
 });
 
+// Exporta a app para testes
+export { app };
+
 // Exporta o tipo da aplicação para uso com Eden Treaty
 export type App = typeof app;

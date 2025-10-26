@@ -31,12 +31,21 @@ export async function registerUser(data: typeof CreateUserSchema.static) {
 }
 
 export async function loginUser(data: typeof LoginUserSchema.static) {
-    const user = await db.query.usuarios.findFirst({
-        where: eq(usuarios.email, data.email),
-    });
+    // Buscar usuário por email ou username
+    let user;
+
+    if (data.email) {
+        user = await db.query.usuarios.findFirst({
+            where: eq(usuarios.email, data.email),
+        });
+    } else if (data.username) {
+        user = await db.query.usuarios.findFirst({
+            where: eq(usuarios.username, data.username),
+        });
+    }
 
     if (!user) {
-        throw new AuthenticationError('E-mail ou senha incorretos');
+        throw new AuthenticationError('E-mail/username ou senha incorretos');
     }
 
     const isPasswordValid = await Bun.password.verify(
@@ -45,7 +54,7 @@ export async function loginUser(data: typeof LoginUserSchema.static) {
     );
 
     if (!isPasswordValid) {
-        throw new AuthenticationError('E-mail ou senha incorretos');
+        throw new AuthenticationError('E-mail/username ou senha incorretos');
     }
 
     const { hashed_password, ...userWithoutPassword } = user;

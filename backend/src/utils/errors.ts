@@ -62,21 +62,23 @@ export class AuthorizationError extends AppError {
  * Utilitário para tratar erros do banco de dados PostgreSQL
  */
 export function handleDatabaseError(error: any): never {
-    // Log completo do erro para debugging
-    console.error('==== ERRO DO BANCO DE DADOS ====');
-    console.error('Tipo do erro:', typeof error);
-    console.error('Error.code:', error.code);
-    console.error('Error.message:', error.message);
-    console.error('Error.detail:', error.detail);
-    console.error('Error.constraint:', error.constraint);
-    console.error('Error.column:', error.column);
-    console.error('Error completo:', JSON.stringify(error, null, 2));
-    console.error('================================');
+    // Extrai informações do erro (pode estar em error ou error.cause)
+    const cause = error.cause || error;
+    const errorCode = cause.code || error.code || error.errno || '';
+    const errorMessage = (error.message || '').toLowerCase();
+    const errorDetail = (cause.detail || error.detail || '').toLowerCase();
+    const constraint = cause.constraint || error.constraint;
 
-    // Verifica se é um erro de constraint do PostgreSQL
-    const errorCode = error.code || error.errno || '';
-    const errorMessage = error.message || '';
-    const errorDetail = error.detail || '';
+    // Log completo do erro apenas se não estiver em modo de teste
+    if (process.env.NODE_ENV !== 'test') {
+        console.error('==== ERRO DO BANCO DE DADOS ====');
+        console.error('Tipo do erro:', typeof error);
+        console.error('Error.code:', errorCode);
+        console.error('Error.message:', error.message);
+        console.error('Error.detail:', errorDetail);
+        console.error('Error.constraint:', constraint);
+        console.error('================================');
+    }
 
     // Erro de unique constraint violation (23505)
     if (errorCode === '23505' ||
@@ -84,33 +86,18 @@ export function handleDatabaseError(error: any): never {
         errorMessage.includes('duplicate key') ||
         errorDetail.includes('already exists')) {
 
-        // Tenta extrair o nome da constraint
-        let constraintName = error.constraint || '';
+        // Tenta extrair qual campo é duplicado
+        let field = 'registro';
 
-        // Tenta extrair o campo do detail
-        const detailMatch = errorDetail.match(/Key \(([^)]+)\)/);
-        const field = detailMatch ? detailMatch[1] : '';
-
-        // Tenta extrair o campo da mensagem
-        const messageMatch = errorMessage.match(/constraint "([^"]+)"/);
-        if (!constraintName && messageMatch) {
-            constraintName = messageMatch[1];
+        if (errorMessage.includes('email') || constraint?.includes('email') || errorDetail.includes('email')) {
+            field = 'email';
+        } else if (errorMessage.includes('username') || constraint?.includes('username') || errorDetail.includes('username')) {
+            field = 'username';
+        } else if (errorMessage.includes('name') || constraint?.includes('name') || errorDetail.includes('name')) {
+            field = 'nome';
         }
 
-        // Monta mensagem descritiva
-        let message = 'Violação de unique constraint: ';
-
-        if (field) {
-            message += `o campo "${field}" já existe`;
-        } else if (constraintName) {
-            // Tenta humanizar o nome da constraint
-            const fieldFromConstraint = constraintName.replace(/_/g, ' ').replace('usuarios', '').replace('unique', '').trim();
-            message += `${fieldFromConstraint || constraintName} já existe`;
-        } else {
-            message += 'este registro já existe no banco de dados';
-        }
-
-        throw new ConflictError(message);
+        throw new ConflictError(`Este ${field} já está em uso`);
     }
 
     // Erro de foreign key violation (23503)
@@ -125,7 +112,7 @@ export function handleDatabaseError(error: any): never {
 
     // Erro de not null violation (23502)
     if (errorCode === '23502' || errorMessage.includes('null value')) {
-        const column = error.column || 'desconhecido';
+        const column = cause.column || error.column || 'desconhecido';
         throw new ValidationError(
             `O campo "${column}" é obrigatório e não pode ser nulo.`
         );
@@ -140,7 +127,7 @@ export function handleDatabaseError(error: any): never {
 
     // Outros erros do banco
     throw new AppError(
-        `Erro ao processar operação no banco de dados: ${errorMessage || 'Erro desconhecido'}`,
+        `Erro ao processar operação no banco de dados: ${error.message || 'Erro desconhecido'}`,
         500,
         'DATABASE_ERROR'
     );

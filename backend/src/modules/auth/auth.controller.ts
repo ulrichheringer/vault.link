@@ -8,7 +8,7 @@ export async function handleRegister({ body, set }: any) {
         const user = await AuthService.registerUser(body as typeof CreateUserSchema.static);
 
         set.status = 201; // Created
-        return { message: 'Usuário criado com sucesso!', user };
+        return user;
     } catch (error) {
         // Se for um erro customizado, propaga para o handler global
         if (error instanceof AppError) {
